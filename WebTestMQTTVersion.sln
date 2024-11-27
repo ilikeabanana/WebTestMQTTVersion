@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.11.35222.181
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebTestMQTTVersionActor", "WebTestMQTTVersionActor\WebTestMQTTVersionActor.csproj", "{BFAC6BAD-06AF-4462-9715-6CB5B384144E}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{BFAC6BAD-06AF-4462-9715-6CB5B384144E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BFAC6BAD-06AF-4462-9715-6CB5B384144E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BFAC6BAD-06AF-4462-9715-6CB5B384144E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BFAC6BAD-06AF-4462-9715-6CB5B384144E}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {623154D1-1D62-4498-A39F-7732A3514F1A}
+	EndGlobalSection
+EndGlobal
