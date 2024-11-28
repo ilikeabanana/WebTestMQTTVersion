@@ -24,7 +24,7 @@ namespace WebTestMQTTVersionHost
             }
             if (messageData.Type == "file")
             {
-
+                HandleFileData(messageData);
             }
         }
 
@@ -83,6 +83,7 @@ namespace WebTestMQTTVersionHost
 
         public void HandleFileData(MessageDataJson messageData)
         {
+            
             byte[] bytes = FileHandler.Base64ToFile(messageData.Value);
             FileHandler.ProcessFile(bytes, messageData.FileName);
         }
