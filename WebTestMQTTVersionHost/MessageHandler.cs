@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -20,6 +21,10 @@ namespace WebTestMQTTVersionHost
             {
                 WebTestMQTTVersionHostPlugin.Log.LogInfo("Its a setting");
                 HandleSettingData(messageData);
+            }
+            if (messageData.Type == "file")
+            {
+
             }
         }
 
@@ -76,7 +81,11 @@ namespace WebTestMQTTVersionHost
             }
         }
 
-
+        public void HandleFileData(MessageDataJson messageData)
+        {
+            byte[] bytes = FileHandler.Base64ToFile(messageData.Value);
+            FileHandler.ProcessFile(bytes, messageData.FileName);
+        }
 
         public void HandleTextData(MessageDataJson messageData)
         {
@@ -94,5 +103,7 @@ namespace WebTestMQTTVersionHost
                     break;
             }
         }
+
+        
     }
 }
