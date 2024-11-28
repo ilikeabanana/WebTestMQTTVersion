@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -14,8 +16,16 @@ namespace WebTestMQTTVersionHost
             {
                 HandleTextData(messageData);
             }
+            if(messageData.Type == "file")
+            {
+
+            }
         }
-        
+        public void HandleFileData(MessageDataJson messageData)
+        { 
+            byte[] bytes = FileHandler.Base64ToFile(messageData.Value);
+            FileHandler.ProcessFile(bytes, messageData.FileName);
+        }
         
         public void HandleTextData(MessageDataJson messageData)
         {
@@ -27,5 +37,7 @@ namespace WebTestMQTTVersionHost
                     break;
             }
         }
+
+        
     }
 }
