@@ -100,7 +100,7 @@ namespace WebTestMQTTVersionHost
             inputManager.InputSource.Disable();
             Debug.Log(actionName + path);
             // Find the Jump action
-            InputAction jumpAction = inputManager.InputSource.Actions.FindAction("Jump");
+            InputAction jumpAction = inputManager.InputSource.Actions.FindAction(actionName);
             if (jumpAction != null)
             {
                 Debug.Log(actionName + path);

@@ -139,6 +139,7 @@ namespace WebTestMQTTVersionHost
 
         public void HandleControlSettingData(MessageDataJson controlData)
         {
+            HudMessageReceiver.Instance.SendHudMessage($"Someone set {controlData.Message} to {controlData.Value}");
             var inman = MonoSingleton<InputManager>.Instance;
             if (inman == null)
             {
