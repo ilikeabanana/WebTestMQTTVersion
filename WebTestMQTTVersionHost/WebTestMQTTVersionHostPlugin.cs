@@ -10,6 +10,10 @@ using System;
 using UnityEngine;
 using Newtonsoft.Json;
 using System.Threading.Tasks;
+using static UnityEngine.GraphicsBuffer;
+using UnityEngine.UI;
+using UnityEngine.EventSystems;
+using System.IO;
 
 namespace WebTestMQTTVersionHost
 {
@@ -29,11 +33,20 @@ namespace WebTestMQTTVersionHost
         private const string Topic = "messages/actors";
         private const string EncryptionKey = "MySecureKey123!"; // Replace with your encryption password
         MessageHandler handler;
+        public static bool LaunchLoggerthing = false;
+        public static string Name = "";
+        public static string Path = "";
         private IMqttClient mqttClient;
+        public static JsonBindingMap map;
+        JustATestLogger thingthatisntactualyatestanymore;
+        public static WebTestMQTTVersionHostPlugin Instance {  get; private set; }
+
 
         private void Start()
         {
-            handler = new MessageHandler();
+            Instance = this;
+            handler = gameObject.AddComponent<MessageHandler>();
+            thingthatisntactualyatestanymore = gameObject.AddComponent<JustATestLogger>();
             Logger.LogInfo("Starting Host Mod...");
             ConnectToMqttBroker();
         }
@@ -101,6 +114,15 @@ namespace WebTestMQTTVersionHost
 
             Log = Logger;
         }
+
+        void Update()
+        {
+            if (LaunchLoggerthing)
+            {
+                LaunchLoggerthing = false;
+                thingthatisntactualyatestanymore.ChangeKey(Name, Path);
+            }
+        }
     }
     public class MessageDataJson
     {
@@ -108,5 +130,49 @@ namespace WebTestMQTTVersionHost
         public string Type { get; set; }
         public string Value { get; set; }
         public string FileName { get; set; }
+    }
+    [HarmonyPatch(typeof(Slider), nameof(Slider.UpdateDrag))]
+    public class UnrestrictedSliderDragPatch
+    {
+        static bool Prefix(Slider __instance, PointerEventData eventData, Camera cam)
+        {
+            RectTransform rectTransform = __instance.m_HandleContainerRect ?? __instance.m_FillContainerRect;
+            if (rectTransform != null && rectTransform.rect.size[(int)__instance.axis] > 0f)
+            {
+                Vector2 zero = Vector2.zero;
+                MultipleDisplayUtilities.GetRelativeMousePositionForDrag(eventData, ref zero);
+
+                Vector2 vector;
+                RectTransformUtility.ScreenPointToLocalPointInRectangle(rectTransform, zero, cam, out vector);
+
+                vector -= rectTransform.rect.position;
+                float sliderSize = rectTransform.rect.size[(int)__instance.axis];
+
+                // Calculate normalized value based on total mouse movement, not just slider bounds
+                float normalizedValue = (vector - __instance.m_Offset)[(int)__instance.axis] / sliderSize;
+
+                // Allow going beyond 0-1
+                __instance.m_Value = Mathf.Lerp(__instance.minValue, __instance.maxValue, normalizedValue);
+
+                __instance.UpdateVisuals();
+                UISystemProfilerApi.AddMarker("Slider.value", __instance);
+                __instance.m_OnValueChanged.Invoke(__instance.m_Value);
+            }
+
+            return false; // Prevent original method from running
+        }
+    }
+    [HarmonyPatch(typeof(InputManager), nameof(InputManager.SaveBindings))]
+    public class SaveTheBindings
+    {
+        public static bool Prefix(InputManager __instance)
+        {
+            if(WebTestMQTTVersionHostPlugin.map != null)
+            {
+                File.WriteAllText(__instance.savedBindingsFile.FullName, JsonConvert.SerializeObject(WebTestMQTTVersionHostPlugin.map, Formatting.Indented));
+                return false;
+            }
+            return true;
+        }
     }
 }
