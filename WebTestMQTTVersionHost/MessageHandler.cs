@@ -8,7 +8,9 @@ using System.Text;
 using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
+using UnityEngine.AddressableAssets;
 using UnityEngine.InputSystem;
+using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.UI;
 using Object= UnityEngine.Object;
 
@@ -455,7 +457,79 @@ namespace WebTestMQTTVersionHost
                     WebTestMQTTVersionHostPlugin.Log.LogInfo("Sending player to level " + messageData.Value);
                     HandleLeveling(messageData.Value);
                     break;
+                case "SpawnPKEY":
+                    WebTestMQTTVersionHostPlugin.Log.LogInfo("Spawning PKEY");
+                    HandleSpawnPKEY(messageData.Value);
+                    break;
             }
+        }
+
+        public void HandleSpawnPKEY(string jsonData)
+        {
+            // Deserialize the JSON data into PKEYValueData object
+            PKEYValueData pkeyData = JsonConvert.DeserializeObject<PKEYValueData>(jsonData);
+
+            if (pkeyData != null)
+            {
+                // Assuming you have a method to spawn the PKEY based on the deserialized data
+                WebTestMQTTVersionHostPlugin.Log.LogInfo($"Spawning PKEY {pkeyData.PKEY} at {pkeyData.Vector3Pos}, relative: {pkeyData.Relative}");
+
+                // Handle spawning of the PKEY addressable here
+                SpawnPKEYAddressable(pkeyData);
+            }
+            else
+            {
+                WebTestMQTTVersionHostPlugin.Log.LogWarning("Failed to deserialize PKEY data.");
+            }
+        }
+
+        public void SpawnPKEYAddressable(PKEYValueData pkeyData)
+        {
+            Vector3 pos = new Vector3(pkeyData.Vector3Pos.x, pkeyData.Vector3Pos.y, pkeyData.Vector3Pos.z);
+            // Example of spawning the addressable or executing the logic with PKEY and position
+            if (pkeyData.Relative)
+            {
+                // Handle spawning relative to the player's position or another reference
+                Vector3 spawnPosition = GetRelativePosition(pos);
+                // Spawn the addressable with this position
+                SpawnAddressable(pkeyData.PKEY, spawnPosition);
+            }
+            else
+            {
+                // Spawn at the specified position directly
+                SpawnAddressable(pkeyData.PKEY, pos);
+            }
+        }
+
+        public Vector3 GetRelativePosition(Vector3 position)
+        {
+            position = MonoSingleton<NewMovement>.instance.transform.position + position;
+            return position; // Placeholder logic
+        }
+
+        public void SpawnAddressable(string pkey, Vector3 position)
+        {
+            // Log the spawn event for debugging
+            WebTestMQTTVersionHostPlugin.Log.LogInfo($"Spawning addressable {pkey} at {position}");
+
+            // Load the addressable asset asynchronously using the PKEY
+            AsyncOperationHandle<GameObject> handle = Addressables.LoadAssetAsync<GameObject>(pkey);
+
+            // Register a completed callback to handle the asset when it's loaded
+            handle.Completed += (op) =>
+            {
+                if (op.Status == AsyncOperationStatus.Succeeded)
+                {
+                    // Instantiate the loaded addressable at the given position
+                    GameObject spawnedObject = Instantiate(op.Result, position, Quaternion.identity);
+                    WebTestMQTTVersionHostPlugin.Log.LogInfo($"Successfully spawned {pkey} at {position}");
+                }
+                else
+                {
+                    // Handle any loading errors here
+                    WebTestMQTTVersionHostPlugin.Log.LogError($"Failed to load addressable {pkey}. Error: {op.OperationException?.Message}");
+                }
+            };
         }
         public void HandleLeveling(string levelText)
         {
