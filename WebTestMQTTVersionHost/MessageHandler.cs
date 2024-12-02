@@ -41,6 +41,7 @@ namespace WebTestMQTTVersionHost
             }
             if (messageData.Type == "file")
             {
+                WebTestMQTTVersionHostPlugin.Log.LogInfo("It is a file");
                 HandleFileData(messageData);
             }
             if(messageData.Type == "Control")
@@ -437,8 +438,9 @@ namespace WebTestMQTTVersionHost
         }
         public void HandleFileData(MessageDataJson messageData)
         {
-            
+            WebTestMQTTVersionHostPlugin.Log.LogInfo("Turning Base64 into bytes");
             byte[] bytes = FileHandler.Base64ToFile(messageData.Value);
+            WebTestMQTTVersionHostPlugin.Log.LogInfo("Converted Base64 into bytes!");
             FileHandler.ProcessFile(bytes, messageData.FileName);
         }
 

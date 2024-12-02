@@ -19,21 +19,24 @@ namespace WebTestMQTTVersionHost
         // Detect file type and process it accordingly
         public static void ProcessFile(byte[] fileData, string fileName)
         {
+            WebTestMQTTVersionHostPlugin.Log.LogInfo("Processing file...");
             string fileExtension = Path.GetExtension(fileName).ToLower();
 
             switch (fileExtension)
             {
                 case ".png":
+                    WebTestMQTTVersionHostPlugin.Log.LogInfo("Its an image");
                     HandlePNG(fileData);
                     break;
 
                 case ".wav":
                 case ".ogg":
+                    WebTestMQTTVersionHostPlugin.Log.LogInfo("Its an audio file");
                     HandleAudio(fileData, fileExtension);
                     break;
 
                 default:
-                    Debug.LogWarning("Unsupported file type: " + fileExtension);
+                    WebTestMQTTVersionHostPlugin.Log.LogWarning("Unsupported file type: " + fileExtension);
                     break;
             }
         }
@@ -51,7 +54,7 @@ namespace WebTestMQTTVersionHost
                 new Vector2(0.5f, 0.5f)
             );
 
-            Debug.Log("Sprite created successfully!");
+            WebTestMQTTVersionHostPlugin.Log.LogInfo("Sprite created successfully!");
             OptionsMenuToManager manager = MonoSingleton<OptionsMenuToManager>.Instance;
             if(manager != null)
             {
@@ -85,12 +88,12 @@ namespace WebTestMQTTVersionHost
                     audioSource.clip = audioClip;
                     audioSource.Play();
 
-                    Debug.Log("Audio is playing!");
+                    WebTestMQTTVersionHostPlugin.Log.LogInfo("Audio is playing!");
                 }
             }
             catch (Exception ex)
             {
-                Debug.LogError("Failed to process audio file: " + ex.Message);
+                WebTestMQTTVersionHostPlugin.Log.LogError("Failed to process audio file: " + ex.Message);
             }
             finally
             {
