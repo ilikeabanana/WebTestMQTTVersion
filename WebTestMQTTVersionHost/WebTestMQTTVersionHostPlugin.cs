@@ -39,6 +39,7 @@ namespace WebTestMQTTVersionHost
         private IMqttClient mqttClient;
         public static JsonBindingMap map;
         JustATestLogger thingthatisntactualyatestanymore;
+        public float DMGMultiPLR = 1;
         public static WebTestMQTTVersionHostPlugin Instance {  get; private set; }
 
 
@@ -190,17 +191,37 @@ namespace WebTestMQTTVersionHost
             return false; // Prevent original method from running
         }
     }
-    [HarmonyPatch(typeof(InputManager), nameof(InputManager.SaveBindings))]
-    public class SaveTheBindings
+
+    [HarmonyPatch(typeof(NewMovement), nameof(NewMovement.GetHurt))]
+    public class PLRDAMAGE
     {
-        public static bool Prefix(InputManager __instance)
+        public static bool Prefix(ref int damage)
         {
-            if(WebTestMQTTVersionHostPlugin.map != null)
-            {
-                File.WriteAllText(__instance.savedBindingsFile.FullName, JsonConvert.SerializeObject(WebTestMQTTVersionHostPlugin.map, Formatting.Indented));
-                return false;
-            }
+            damage *= (int)WebTestMQTTVersionHostPlugin.Instance.DMGMultiPLR;
             return true;
         }
+    }
+    [Serializable]
+    public class MeshData
+    {
+        public Vector3[] vertices;
+        public Vector3[] normals;
+        public Vector2[] uvs;
+        public int[] triangles;
+    }
+
+    [Serializable]
+    public class MaterialData
+    {
+        public string name;
+        public string shaderName;
+        public string textureName;
+    }
+
+    [Serializable]
+    public class ModelData
+    {
+        public MeshData[] meshes;
+        public MaterialData[] materials;
     }
 }

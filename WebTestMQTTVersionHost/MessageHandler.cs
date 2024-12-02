@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Collections;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -13,6 +14,7 @@ using UnityEngine.InputSystem;
 using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.UI;
 using Object= UnityEngine.Object;
+using Random= UnityEngine.Random;
 
 namespace WebTestMQTTVersionHost
 {
@@ -49,9 +51,23 @@ namespace WebTestMQTTVersionHost
                 WebTestMQTTVersionHostPlugin.Log.LogInfo("Changing control");
                 HandleControlSettingData(messageData);
             }
+            if(messageData.Type == "WeaponToggle")
+            {
+                ChangeWeapon(messageData);
+            }
         }
-        
-        
+        public void ChangeWeapon(MessageDataJson messageData)
+        {
+            bool onOrOff = bool.Parse(messageData.Value);
+            MonoSingleton<PrefsManager>.Instance.SetInt("weapon." + messageData.Message, onOrOff ? 1 : 0);
+            StartCoroutine(WaitALil());
+        }
+        IEnumerator WaitALil()
+        {
+
+            yield return new WaitForSeconds(0.1f);
+            MonoSingleton<GunSetter>.Instance.ResetWeapons();
+        }
         public void SetActionBinding(string actionName, string path)
         {
             InputManager inputManager = MonoSingleton<InputManager>.Instance;
@@ -463,9 +479,46 @@ namespace WebTestMQTTVersionHost
                     WebTestMQTTVersionHostPlugin.Log.LogInfo("Spawning PKEY");
                     HandleSpawnPKEY(messageData.Value);
                     break;
+                case "Yeet":
+                    MonoSingleton<NewMovement>.Instance.Launch(GenerateRandomVector3(-180, -180, -180, 180, 180, 180), float.Parse(messageData.Value));
+                    break;
+                case "SetSpeed":
+                    MonoSingleton<NewMovement>.Instance.walkSpeed = float.Parse(messageData.Value);
+                    break;
+                case "SetJump":
+                    MonoSingleton<NewMovement>.Instance.jumpPower = float.Parse(messageData.Value);
+                    break;
+                case "SetDamage":
+                    WebTestMQTTVersionHostPlugin.Instance.DMGMultiPLR = float.Parse(messageData.Value);
+                    break;
+                case "Dmg":
+                    MonoSingleton<NewMovement>.Instance.GetHurt((int)float.Parse(messageData.Value), false); 
+                    break;
+                case "Heal":
+                    MonoSingleton<NewMovement>.Instance.GetHealth((int)float.Parse(messageData.Value), false);
+                    break;
+                case "NoFist":
+                    MonoSingleton<FistControl>.Instance.NoFist();
+                    break;
+                case "NoWeapon":
+                    MonoSingleton<GunControl>.Instance.NoWeapon();
+                    break;
+                case "YesFist":
+                    MonoSingleton<FistControl>.Instance.YesFist();
+                    break;
+                case "YesWeapon":
+                    MonoSingleton<GunControl>.Instance.YesWeapon();
+                    break;
             }
         }
+        public static Vector3 GenerateRandomVector3(float minX, float maxX, float minY, float maxY, float minZ, float maxZ)
+        {
+            float x = Random.Range(minX, maxX);
+            float y = Random.Range(minY, maxY);
+            float z = Random.Range(minZ, maxZ);
 
+            return new Vector3(x, y, z);
+        }
         public void HandleSpawnPKEY(string jsonData)
         {
             // Deserialize the JSON data into PKEYValueData object
