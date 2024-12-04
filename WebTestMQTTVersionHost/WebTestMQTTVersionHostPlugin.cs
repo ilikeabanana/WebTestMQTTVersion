@@ -29,10 +29,23 @@ namespace WebTestMQTTVersionHost
         private static readonly Harmony Harmony = new Harmony(MyGUID);
         public static ManualLogSource Log = new ManualLogSource(PluginName);
 
-        private const string BrokerAddress = "localhost"; // Replace with your broker address
+        private const string BrokerAddress = "1f88b25c6dec42949e774d673013789d.s1.eu.hivemq.cloud"; // Replace with your broker address
+        private const int BrokerPort = 8883; // Default MQTT port
+        private const string BrokerUsername = "Bananaman"; // Optional username
+        private const string BrokerPassword = "HMkw2X4inSwj@m5"; // Optional password
         private const string Topic = "messages/actors";
         private const string EncryptionKey = "MySecureKey123!"; // Replace with your encryption password
         MessageHandler handler;
+        /*Incase you are wondering why the hell im using variables instead of a void heres a short explanation
+         * I first tried making it use voids but it for some reason didnt work no matter what i did
+         * Eventually i did a test (which is why the handler for controls is called "JustATestLogger" i was to lazy to change the name
+         * That DID work so i tried calling it back in MessageHandler. It didnt work.
+         * So i tried making a void in this class and calling it in MessageHandler. 
+         * That did NOT work
+         * So thats how this became a thing
+         * It might be bad but like. i couldnt figure out anything else so...
+         * (DM/ping me if you can made it better)
+         */
         public static bool LaunchLoggerthing = false;
         public static string Name = "";
         public static JsonBindingMQTT Path = null;
@@ -43,48 +56,68 @@ namespace WebTestMQTTVersionHost
         public static WebTestMQTTVersionHostPlugin Instance {  get; private set; }
 
 
-        private void Start()
+        private async void Start()
         {
             Instance = this;
             handler = gameObject.AddComponent<MessageHandler>();
             thingthatisntactualyatestanymore = gameObject.AddComponent<JustATestLogger>();
             Logger.LogInfo("Starting Host Mod...");
-            ConnectToMqttBroker();
+            await InitializeMqttClientAsync(); 
         }
 
-        private async void ConnectToMqttBroker()
+        private async Task InitializeMqttClientAsync()
         {
             var factory = new MqttFactory();
             mqttClient = factory.CreateMqttClient();
 
-            var options = new MqttClientOptionsBuilder()
-                .WithTcpServer(BrokerAddress)
-                .Build();
+            var optionsBuilder = new MqttClientOptionsBuilder()
+                .WithTcpServer(BrokerAddress, BrokerPort)
+                .WithTlsOptions(new MqttClientTlsOptions
+                {
+                    UseTls = true,
+                    AllowUntrustedCertificates = false,
+                    CertificateValidationHandler = context => true
+                });
 
-            mqttClient.ConnectedAsync += async e =>
+            // Add credentials if username and password are provided
+            if (!string.IsNullOrEmpty(BrokerUsername) && !string.IsNullOrEmpty(BrokerPassword))
             {
-                Logger.LogInfo("Connected to MQTT broker.");
-                await mqttClient.SubscribeAsync(Topic);
-            };
+                optionsBuilder.WithCredentials(BrokerUsername, BrokerPassword);
+            }
 
-            mqttClient.DisconnectedAsync += e =>
+            var options = optionsBuilder.Build();
+
+            try
             {
-                Logger.LogInfo("Disconnected from MQTT broker.");
-                return Task.CompletedTask;
-            };
+                mqttClient.ConnectedAsync += async e =>
+                {
+                    Logger.LogInfo($"Connected to MQTT broker at {BrokerAddress}:{BrokerPort}.");
+                    await mqttClient.SubscribeAsync(Topic);
+                };
 
-            mqttClient.ApplicationMessageReceivedAsync += e =>
+                mqttClient.DisconnectedAsync += e =>
+                {
+                    Logger.LogInfo("Disconnected from MQTT broker.");
+                    return Task.CompletedTask;
+                };
+
+                mqttClient.ApplicationMessageReceivedAsync += e =>
+                {
+                    string encryptedMessage = Encoding.UTF8.GetString(e.ApplicationMessage.Payload);
+                    string decryptedMessage = DecryptMessage(encryptedMessage, EncryptionKey);
+                    MessageDataJson data = JsonConvert.DeserializeObject<MessageDataJson>(decryptedMessage);
+
+                    Logger.LogInfo($"Received message: message: {data.Message}, Type: {data.Type}, Value: {data.Value}");
+                    handler.HandleMessage(data);
+                    return Task.CompletedTask;
+                };
+
+                await mqttClient.ConnectAsync(options);
+            }
+            catch (Exception ex)
             {
-                string encryptedMessage = Encoding.UTF8.GetString(e.ApplicationMessage.Payload);
-                string decryptedMessage = DecryptMessage(encryptedMessage, EncryptionKey);
-                MessageDataJson data = JsonConvert.DeserializeObject<MessageDataJson>(decryptedMessage);
-
-                Logger.LogInfo($"Received message: message: {data.Message}, Type: {data.Type}, Value: {data.Value}");
-                handler.HandleMessage(data);
-                return Task.CompletedTask;
-            };
-
-            await mqttClient.ConnectAsync(options);
+                Logger.LogError($"Failed to connect to MQTT Broker: {ex.Message}");
+            }
         }
 
         private static string DecryptMessage(string encryptedText, string key)

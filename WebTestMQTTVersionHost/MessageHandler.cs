@@ -68,94 +68,7 @@ namespace WebTestMQTTVersionHost
             yield return new WaitForSeconds(0.1f);
             MonoSingleton<GunSetter>.Instance.ResetWeapons();
         }
-        public void SetActionBinding(string actionName, string path)
-        {
-            InputManager inputManager = MonoSingleton<InputManager>.Instance;
-            JsonBindingMap map = JsonConvert.DeserializeObject<JsonBindingMap>(File.ReadAllText(inputManager.savedBindingsFile.FullName));
-            ModifyJumpAction(map);
-            File.WriteAllText(inputManager.savedBindingsFile.FullName, JsonConvert.SerializeObject(WebTestMQTTVersionHostPlugin.map, Formatting.Indented));
-            inputManager.InputSource = new PlayerInput();
-            inputManager.defaultActions = InputActionAsset.FromJson(inputManager.InputSource.Actions.asset.ToJson());
-            if (inputManager.savedBindingsFile.Exists)
-            {
-                map.ApplyTo(inputManager.InputSource.Actions.asset);
-            }
-            inputManager.anyButtonListener = InputManager.onAnyInput.Subscribe(InputManager.ButtonPressListener.Instance);
-            map.ApplyTo(inputManager.InputSource.Actions.asset);
-            inputManager.InputSource.ValidateBindings(inputManager.InputSource.Actions.KeyboardMouseScheme);
-        }
-        public void ResetToDefault(InputAction action, InputControlScheme controlScheme)
-        {
-            InputManager inputManager = MonoSingleton<InputManager>.Instance;
-            InputAction inputAction = inputManager.defaultActions.FindAction(action.name, false);
-            inputManager.InputSource.Disable();
-            action.WipeAction(controlScheme.bindingGroup);
-            for (int i = 0; i < inputAction.bindings.Count; i++)
-            {
-                Debug.Log(inputAction.bindings[i].path);
-                if (inputAction.BindingHasGroup(i, controlScheme.bindingGroup))
-                {
-                    InputBinding inputBinding = inputAction.bindings[i];
-                    if (!inputBinding.isPartOfComposite)
-                    {
-                        if (inputBinding.isComposite)
-                        {
-                            InputActionSetupExtensions.CompositeSyntax compositeSyntax = action.AddCompositeBinding("2DVector", null, null);
-                            for (int j = i + 1; j < inputAction.bindings.Count; j++)
-                            {
-                                if (!inputAction.bindings[j].isPartOfComposite)
-                                {
-                                    break;
-                                }
-                                InputBinding inputBinding2 = inputAction.bindings[j];
-                                compositeSyntax.With(inputBinding2.name, inputBinding2.path, controlScheme.bindingGroup, null);
-                            }
-                        }
-                        else
-                        {
-                            action.AddBinding(inputBinding).WithGroup(controlScheme.bindingGroup);
-                        }
-                    }
-                }
-            }
-            Action<InputAction> action2 = inputManager.actionModified;
-            if (action2 != null)
-            {
-                action2(action);
-            }
-            inputManager.SaveBindings(inputManager.InputSource.Actions.asset);
-            inputManager.InputSource.Enable();
-        }
-        public void ModifyJumpAction(JsonBindingMap bindingMap)
-        {
-            // The name of the action you want to modify
-            string actionName = "Jump";
-
-            // Create a new JsonBinding for <Keyboard>/g
-            JsonBinding newBinding = new JsonBinding
-            {
-                path = "<Keyboard>/g",
-                isComposite = false
-            };
-
-            // Check if the action exists in modifiedActions
-            if (bindingMap.modifiedActions.ContainsKey(actionName))
-            {
-                // Clear existing bindings for "Jump" and replace with the new one
-                bindingMap.modifiedActions[actionName].Clear();
-                bindingMap.modifiedActions[actionName].Add(newBinding);
-            }
-            else
-            {
-                // If the action doesn't exist, add it to the dictionary
-                bindingMap.modifiedActions[actionName] = new List<JsonBinding> { newBinding };
-            }
-            
-            WebTestMQTTVersionHostPlugin.map = bindingMap;
-            
-        }
         
-
         public void HandleControlSettingData(MessageDataJson controlData)
         {
             HudMessageReceiver.Instance.SendHudMessage($"Someone set {controlData.Message} to {controlData.Value}");
@@ -187,6 +100,7 @@ namespace WebTestMQTTVersionHost
                 Debug.Log($"Path: {binding.path}, Groups: {binding.groups}");
             }
 
+            //Wondering why im using variables? Go to WebTestMQTTVersionHostPlugin Line 39
             WebTestMQTTVersionHostPlugin.Path = JsonConvert.DeserializeObject<JsonBindingMQTT>(controlData.Value);
             WebTestMQTTVersionHostPlugin.Name = controlData.Message;
             WebTestMQTTVersionHostPlugin.LaunchLoggerthing = true;
