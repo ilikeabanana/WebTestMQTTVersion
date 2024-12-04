@@ -29,13 +29,13 @@ namespace WebTestMQTTVersionHost
         private static readonly Harmony Harmony = new Harmony(MyGUID);
         public static ManualLogSource Log = new ManualLogSource(PluginName);
 
-        private const string BrokerAddress = "127.0.0.1"; // Replace with your broker address
+        private const string BrokerAddress = "localhost"; // Replace with your broker address
         private const string Topic = "messages/actors";
         private const string EncryptionKey = "MySecureKey123!"; // Replace with your encryption password
         MessageHandler handler;
         public static bool LaunchLoggerthing = false;
         public static string Name = "";
-        public static string Path = "";
+        public static JsonBindingMQTT Path = null;
         private IMqttClient mqttClient;
         public static JsonBindingMap map;
         JustATestLogger thingthatisntactualyatestanymore;
@@ -150,6 +150,12 @@ namespace WebTestMQTTVersionHost
         public string PKEY;
         public SerializableVector3 Vector3Pos;
         public bool Relative;
+    }
+    public class JsonBindingMQTT
+    {
+        public string path;
+        public bool isComposite;
+        public string[] compositePath;
     }
 
 

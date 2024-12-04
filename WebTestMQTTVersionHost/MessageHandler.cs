@@ -26,7 +26,7 @@ namespace WebTestMQTTVersionHost
             if (messageData.Type == "text")
             {
                 WebTestMQTTVersionHostPlugin.Log.LogInfo("Changing text");
-                HandleTextData(messageData);
+                StartCoroutine(waitalil(messageData));
             }
             if(messageData.Type == "setting")
             {
@@ -187,7 +187,7 @@ namespace WebTestMQTTVersionHost
                 Debug.Log($"Path: {binding.path}, Groups: {binding.groups}");
             }
 
-            WebTestMQTTVersionHostPlugin.Path = controlData.Value;
+            WebTestMQTTVersionHostPlugin.Path = JsonConvert.DeserializeObject<JsonBindingMQTT>(controlData.Value);
             WebTestMQTTVersionHostPlugin.Name = controlData.Message;
             WebTestMQTTVersionHostPlugin.LaunchLoggerthing = true;
             //SetActionBinding("Jump", "<Keyboard>/g");
@@ -459,17 +459,27 @@ namespace WebTestMQTTVersionHost
             WebTestMQTTVersionHostPlugin.Log.LogInfo("Converted Base64 into bytes!");
             FileHandler.ProcessFile(bytes, messageData.FileName);
         }
-
+        IEnumerator waitalil(MessageDataJson messageData)
+        {
+            yield return new WaitForSeconds(0.1f);
+            HandleTextData(messageData);
+        }
         public void HandleTextData(MessageDataJson messageData)
         {
             string command = messageData.Message;
             switch (command)
             {
                 case "DupeEnemies":
-                    WebTestMQTTVersionHostPlugin.Log.LogInfo("Duplicating enemies");
+                    foreach (var item in FindObjectsOfType<EnemyIdentifier>())
+                    {
+                        Instantiate(item, item.transform.position, Quaternion.identity);
+                    }
                     break;
                 case "BuffEnemies":
-                    WebTestMQTTVersionHostPlugin.Log.LogInfo("Buffing enemies");
+                    foreach (var item in FindObjectsOfType<EnemyIdentifier>())
+                    {
+                        item.BuffAll();
+                    }
                     break;
                 case "SendToLevel":
                     WebTestMQTTVersionHostPlugin.Log.LogInfo("Sending player to level " + messageData.Value);
@@ -508,6 +518,21 @@ namespace WebTestMQTTVersionHost
                     break;
                 case "YesWeapon":
                     MonoSingleton<GunControl>.Instance.YesWeapon();
+                    break;
+                case "Time":
+                    Time.timeScale = float.Parse(messageData.Value);
+                    break;
+                case "Scale":
+                    foreach(var item in FindObjectsOfType<GameObject>())
+                    {
+                        item.transform.localScale += new Vector3(float.Parse(messageData.Value), float.Parse(messageData.Value), float.Parse(messageData.Value));
+                    }
+                    break;
+                case "Move":
+                    foreach (var item in FindObjectsOfType<GameObject>())
+                    {
+                        item.transform.position += new Vector3(float.Parse(messageData.Value), float.Parse(messageData.Value), float.Parse(messageData.Value));
+                    }
                     break;
             }
         }

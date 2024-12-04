@@ -84,9 +84,9 @@ namespace WebTestMQTTVersionHost
                 }
             }
         }*/
-        public void ChangeKey(string actionName, string path)
+        public void ChangeKey(string actionName, JsonBindingMQTT path)
         {
-            Debug.Log(actionName + path);
+            Debug.Log(actionName + " binding path: " + path.path);
             InputManager inputManager = MonoSingleton<InputManager>.Instance;
 
             // Dispose of the existing button listener to prevent potential conflicts
@@ -94,22 +94,36 @@ namespace WebTestMQTTVersionHost
             {
                 inputManager.anyButtonListener.Dispose();
             }
-            Debug.Log(actionName + path);
 
-            // Instead of creating a completely new PlayerInput, modify the existing one
             inputManager.InputSource.Disable();
-            Debug.Log(actionName + path);
-            // Find the Jump action
-            InputAction jumpAction = inputManager.InputSource.Actions.FindAction(actionName);
-            if (jumpAction != null)
-            {
-                Debug.Log(actionName + path);
-                // Wipe the action for the Keyboard & Mouse scheme
-                jumpAction.WipeAction(inputManager.InputSource.Actions.KeyboardMouseScheme.bindingGroup);
 
-                // Add the new binding
-                jumpAction.AddBinding(path)
-                    .WithGroup(inputManager.InputSource.Actions.KeyboardMouseScheme.bindingGroup);
+            // Find the action
+            InputAction targetAction = inputManager.InputSource.Actions.FindAction(actionName);
+            if (targetAction != null)
+            {
+                // Wipe the action for the Keyboard & Mouse scheme
+                targetAction.WipeAction(inputManager.InputSource.Actions.KeyboardMouseScheme.bindingGroup);
+
+                // Handle composite and single inputs differently
+                if (path.isComposite && path.compositePath != null && path.compositePath.Length > 0)
+                {
+                    // Create a composite binding
+                    var compositeBinding = targetAction.AddCompositeBinding("Dpad");
+
+                    string[] directions = new[] { "Up", "Down", "Left", "Right" };
+                    for (int i = 0; i < Mathf.Min(path.compositePath.Length, directions.Length); i++)
+                    {
+                        if (!string.IsNullOrEmpty(path.compositePath[i]))
+                        {
+                            compositeBinding.With(directions[i], path.compositePath[i]);
+                        }
+                    }
+                }
+                else
+                {
+                    // For single inputs, add the binding directly
+                    targetAction.AddBinding(path.path);
+                }
             }
 
             // Re-enable the input source
@@ -117,7 +131,6 @@ namespace WebTestMQTTVersionHost
 
             // Reestablish the button listener
             inputManager.anyButtonListener = InputManager.onAnyInput.Subscribe(InputManager.ButtonPressListener.Instance);
-            Debug.Log(actionName + path);
         }
         // Token: 0x06000353 RID: 851 RVA: 0x00018BF4 File Offset: 0x00016DF4
         private void LateUpdate()
@@ -198,4 +211,10 @@ namespace WebTestMQTTVersionHost
         public List<ActionDisplayConfig> actionConfig;
 
     }
+}
+public class JsonBindingMQTT
+{
+    public string path;
+    public bool isComposite;
+    public string[] compositePath;
 }
