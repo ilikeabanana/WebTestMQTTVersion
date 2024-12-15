@@ -53,6 +53,7 @@ namespace WebTestMQTTVersionHost
         public static JsonBindingMap map;
         JustATestLogger thingthatisntactualyatestanymore;
         public float DMGMultiPLR = 1;
+        public float DMGMultiENEMY = 1;
         public static WebTestMQTTVersionHostPlugin Instance {  get; private set; }
 
 
@@ -237,6 +238,15 @@ namespace WebTestMQTTVersionHost
         public static bool Prefix(ref int damage)
         {
             damage *= (int)WebTestMQTTVersionHostPlugin.Instance.DMGMultiPLR;
+            return true;
+        }
+    }
+    [HarmonyPatch(typeof(EnemyIdentifier), nameof(EnemyIdentifier.DeliverDamage))]
+    public class EnemyDAMAGE
+    {
+        public static bool Prefix(ref float multiplier)
+        {
+            multiplier *= (int)WebTestMQTTVersionHostPlugin.Instance.DMGMultiENEMY;
             return true;
         }
     }

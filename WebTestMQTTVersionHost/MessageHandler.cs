@@ -395,6 +395,20 @@ namespace WebTestMQTTVersionHost
                         item.BuffAll();
                     }
                     break;
+                case "DupeEnemy":
+                    EnemyIdentifier enemy = FindObjectsOfType<EnemyIdentifier>().Where((x) => !x.dead).FirstOrDefault();
+                    if(enemy != null)
+                    {
+                        Instantiate(enemy, enemy.transform.position, Quaternion.identity);
+                    }
+                    break;
+                case "BuffEnemy":
+                    EnemyIdentifier aenemy = FindObjectsOfType<EnemyIdentifier>().Where((x) => !x.dead).FirstOrDefault();
+                    if (aenemy != null)
+                    {
+                        aenemy.BuffAll();
+                    }
+                    break;
                 case "SendToLevel":
                     WebTestMQTTVersionHostPlugin.Log.LogInfo("Sending player to level " + messageData.Value);
                     HandleLeveling(messageData.Value);
@@ -414,6 +428,9 @@ namespace WebTestMQTTVersionHost
                     break;
                 case "SetDamage":
                     WebTestMQTTVersionHostPlugin.Instance.DMGMultiPLR = float.Parse(messageData.Value);
+                    break;
+                case "SetDamageEnemy":
+                    WebTestMQTTVersionHostPlugin.Instance.DMGMultiENEMY = float.Parse(messageData.Value);
                     break;
                 case "Dmg":
                     MonoSingleton<NewMovement>.Instance.GetHurt((int)float.Parse(messageData.Value), false); 
