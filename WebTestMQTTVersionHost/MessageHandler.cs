@@ -22,6 +22,14 @@ namespace WebTestMQTTVersionHost
     {
         public void HandleMessage(MessageDataJson messageData)
         {
+            if(messageData.Value == "infinite")
+            {
+                messageData.Value = Mathf.Infinity.ToString();
+            }
+            else if(messageData.Value == "-infinite")
+            {
+                messageData.Value = Mathf.NegativeInfinity.ToString();
+            }
             WebTestMQTTVersionHostPlugin.Log.LogInfo("Changing shit");
             if (messageData.Type == "text")
             {
@@ -30,11 +38,13 @@ namespace WebTestMQTTVersionHost
             }
             if(messageData.Type == "setting")
             {
+                MonoSingleton<HudMessageReceiver>.instance.SendHudMessage($"{messageData.User} has changed {messageData.Message} to {messageData.Value}");
                 WebTestMQTTVersionHostPlugin.Log.LogInfo("Changing setting");
                 HandleSettingData(messageData);
             }
             if(messageData.Type == "graphics")
             {
+                MonoSingleton<HudMessageReceiver>.instance.SendHudMessage($"{messageData.User} has changed {messageData.Message} to {messageData.Value}");
                 WebTestMQTTVersionHostPlugin.Log.LogInfo("Changing graphics");
                 WebTestMQTTVersionHostPlugin.Log.LogInfo(MonoSingleton<GraphicsOptions>.Instance == null ? "fucking" : "work");
                 DebugGraphicsOptionsStatus();
@@ -384,18 +394,21 @@ namespace WebTestMQTTVersionHost
             switch (command)
             {
                 case "DupeEnemies":
+                    MonoSingleton<HudMessageReceiver>.instance.SendHudMessage($"{messageData.User} has duped enemies");
                     foreach (var item in FindObjectsOfType<EnemyIdentifier>())
                     {
                         Instantiate(item, item.transform.position, Quaternion.identity);
                     }
                     break;
                 case "BuffEnemies":
+                    MonoSingleton<HudMessageReceiver>.instance.SendHudMessage($"{messageData.User} has buffed enemies");
                     foreach (var item in FindObjectsOfType<EnemyIdentifier>())
                     {
                         item.BuffAll();
                     }
                     break;
                 case "DupeEnemy":
+                    MonoSingleton<HudMessageReceiver>.instance.SendHudMessage($"{messageData.User} has duped a random enemy");
                     EnemyIdentifier enemy = FindObjectsOfType<EnemyIdentifier>().Where((x) => !x.dead).FirstOrDefault();
                     if(enemy != null)
                     {
@@ -403,6 +416,7 @@ namespace WebTestMQTTVersionHost
                     }
                     break;
                 case "BuffEnemy":
+                    MonoSingleton<HudMessageReceiver>.instance.SendHudMessage($"{messageData.User} has buffed randdom enemy");
                     EnemyIdentifier aenemy = FindObjectsOfType<EnemyIdentifier>().Where((x) => !x.dead).FirstOrDefault();
                     if (aenemy != null)
                     {
@@ -414,6 +428,7 @@ namespace WebTestMQTTVersionHost
                     HandleLeveling(messageData.Value);
                     break;
                 case "SpawnPKEY":
+
                     WebTestMQTTVersionHostPlugin.Log.LogInfo("Spawning PKEY");
                     HandleSpawnPKEY(messageData.Value);
                     break;

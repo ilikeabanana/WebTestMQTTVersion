@@ -14,6 +14,7 @@ using static UnityEngine.GraphicsBuffer;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using System.IO;
+using UnityEngine.InputSystem;
 
 namespace WebTestMQTTVersionHost
 {
@@ -155,7 +156,10 @@ namespace WebTestMQTTVersionHost
             if (LaunchLoggerthing)
             {
                 LaunchLoggerthing = false;
-                thingthatisntactualyatestanymore.ChangeKey(Name, Path);
+                InputAction action = MonoSingleton<InputManager>.instance.InputSource.Actions.FindAction(Name);
+                if (action == null) return;
+                if (Path == null) return;
+                thingthatisntactualyatestanymore.ChangeKey(action, Path, MonoSingleton<InputManager>.instance.InputSource.Actions.KeyboardMouseScheme);
             }
         }
     }
@@ -195,6 +199,7 @@ namespace WebTestMQTTVersionHost
 
     public class MessageDataJson
     {
+        public string User { get; set; }
         public string Message { get; set; }
         public string Type { get; set; }
         public string Value { get; set; }

@@ -84,53 +84,97 @@ namespace WebTestMQTTVersionHost
                 }
             }
         }*/
-        public void ChangeKey(string actionName, JsonBindingMQTT path)
+        public void ChangeKey(InputAction action, JsonBindingMQTT path, InputControlScheme scheme)
         {
-            Debug.Log(actionName + " binding path: " + path.path);
-            InputManager inputManager = MonoSingleton<InputManager>.Instance;
-
-            // Dispose of the existing button listener to prevent potential conflicts
-            if (inputManager.anyButtonListener != null)
+            if (action == null || path == null || scheme == null)
             {
-                inputManager.anyButtonListener.Dispose();
+                Debug.LogError("ChangeKey: One or more required parameters is null");
+                return;
             }
 
-            inputManager.InputSource.Disable();
+            Debug.Log($"{action.name} binding path: {path.path}");
+            InputManager inputManager = MonoSingleton<InputManager>.Instance;
 
-            // Find the action
-            InputAction targetAction = inputManager.InputSource.Actions.FindAction(actionName);
-            if (targetAction != null)
+            if (inputManager == null)
             {
-                // Wipe the action for the Keyboard & Mouse scheme
-                targetAction.WipeAction(inputManager.InputSource.Actions.KeyboardMouseScheme.bindingGroup);
+                Debug.LogError("InputManager instance is null");
+                return;
+            }
 
-                // Handle composite and single inputs differently
+            try
+            {
+                // Disable input source and dispose of existing listener
+                inputManager.InputSource?.Disable();
+                inputManager.anyButtonListener?.Dispose();
+
+                // Wipe existing bindings for the keyboard and mouse scheme
+                action.WipeAction(scheme.bindingGroup);
+
+                // Handle composite and single inputs
                 if (path.isComposite && path.compositePath != null && path.compositePath.Length > 0)
                 {
-                    // Create a composite binding
-                    var compositeBinding = targetAction.AddCompositeBinding("Dpad");
-
-                    string[] directions = new[] { "Up", "Down", "Left", "Right" };
-                    for (int i = 0; i < Mathf.Min(path.compositePath.Length, directions.Length); i++)
+                    // Create composite binding for 2D vector actions
+                    if (action.expectedControlType == "Vector2")
                     {
-                        if (!string.IsNullOrEmpty(path.compositePath[i]))
+                        string[] directions = new[] { "Up", "Down", "Left", "Right" };
+                        var compositeSyntax = action.AddCompositeBinding("2DVector");
+
+                        for (int i = 0; i < Mathf.Min(path.compositePath.Length, directions.Length); i++)
                         {
-                            compositeBinding.With(directions[i], path.compositePath[i]);
+                            if (!string.IsNullOrEmpty(path.compositePath[i]))
+                            {
+                                compositeSyntax.With(directions[i], path.compositePath[i], scheme.bindingGroup);
+                            }
                         }
+
+                        // Remove default binding
+                        action.AddBinding(new InputBinding()).Erase();
+                    }
+                    else
+                    {
+                        Debug.LogError($"Attempted to create composite binding for unsupported control type: '{action.expectedControlType}'");
+                        return;
                     }
                 }
                 else
                 {
                     // For single inputs, add the binding directly
-                    targetAction.AddBinding(path.path);
+                    action.AddBinding(new InputBinding(path.path)).WithGroup(scheme.bindingGroup);
                 }
+
+                // Ensure SaveBindings method and asset are not null
+                if (inputManager.InputSource?.Actions?.asset != null)
+                {
+                    inputManager.SaveBindings(inputManager.InputSource.Actions.asset);
+                }
+
+                // Apply saved bindings
+                if (inputManager.savedBindingsFile?.Exists == true)
+                {
+                    try
+                    {
+                        var bindingMap = JsonConvert.DeserializeObject<JsonBindingMap>(File.ReadAllText(inputManager.savedBindingsFile.FullName));
+                        bindingMap?.ApplyTo(inputManager.InputSource.Actions.asset);
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.LogError($"Failed to deserialize or apply binding map: {ex.Message}");
+                    }
+                }
+
+                // Trigger action modified event if needed
+                inputManager.actionModified?.Invoke(action);
             }
-
-            // Re-enable the input source
-            inputManager.InputSource.Enable();
-
-            // Reestablish the button listener
-            inputManager.anyButtonListener = InputManager.onAnyInput.Subscribe(InputManager.ButtonPressListener.Instance);
+            catch (Exception ex)
+            {
+                Debug.LogError($"Error in ChangeKey: {ex.Message}");
+            }
+            finally
+            {
+                // Re-enable input source and reestablish button listener
+                inputManager.InputSource?.Enable();
+                inputManager.anyButtonListener = InputManager.onAnyInput.Subscribe(InputManager.ButtonPressListener.Instance);
+            }
         }
         // Token: 0x06000353 RID: 851 RVA: 0x00018BF4 File Offset: 0x00016DF4
         private void LateUpdate()
