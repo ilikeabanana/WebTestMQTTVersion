@@ -103,6 +103,27 @@ namespace WebTestMQTTVersionHost
 
             try
             {
+                // Check for conflicting bindings
+                var allActions = inputManager.InputSource?.Actions?.asset?.actionMaps.SelectMany(map => map.actions);
+                string oldPath = action.bindings.FirstOrDefault(b => b.groups == scheme.bindingGroup).effectivePath;
+
+                if (allActions != null && oldPath != null)
+                {
+                    foreach (var otherAction in allActions)
+                    {
+                        if (otherAction == action) continue;
+
+                        foreach (var binding in otherAction.bindings)
+                        {
+                            if (binding.groups == scheme.bindingGroup && binding.effectivePath == path.path)
+                            {
+                                Debug.Log($"Conflicting binding detected: {otherAction.name} -> {path.path}. Updating to {oldPath}.");
+                                otherAction.ChangeBinding(binding).WithPath(oldPath);
+                            }
+                        }
+                    }
+                }
+
                 // Disable input source and dispose of existing listener
                 inputManager.InputSource?.Disable();
                 inputManager.anyButtonListener?.Dispose();
@@ -176,6 +197,7 @@ namespace WebTestMQTTVersionHost
                 inputManager.anyButtonListener = InputManager.onAnyInput.Subscribe(InputManager.ButtonPressListener.Instance);
             }
         }
+
         // Token: 0x06000353 RID: 851 RVA: 0x00018BF4 File Offset: 0x00016DF4
         private void LateUpdate()
         {

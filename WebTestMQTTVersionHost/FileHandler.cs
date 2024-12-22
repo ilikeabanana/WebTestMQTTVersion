@@ -84,11 +84,6 @@ namespace WebTestMQTTVersionHost
                     img.sprite = sprite;
                     go.transform.localPosition = Vector3.zero;
                     WebTestMQTTVersionHostPlugin.Log.LogInfo("Image added to screen.");
-                    while(img.color.a > 0)
-                    {
-                        img.color = img.color - new Color(0, 0, 0, 0.01f);
-                    }
-                    GameObject.Destroy(go);
                 }
                 else
                 {

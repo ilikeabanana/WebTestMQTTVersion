@@ -159,6 +159,7 @@ namespace WebTestMQTTVersionHost
                 InputAction action = MonoSingleton<InputManager>.instance.InputSource.Actions.FindAction(Name);
                 if (action == null) return;
                 if (Path == null) return;
+                if (Path.path == null) return;
                 thingthatisntactualyatestanymore.ChangeKey(action, Path, MonoSingleton<InputManager>.instance.InputSource.Actions.KeyboardMouseScheme);
             }
         }
@@ -188,6 +189,8 @@ namespace WebTestMQTTVersionHost
         public string PKEY;
         public SerializableVector3 Vector3Pos;
         public bool Relative;
+        public float delay;
+        public float amount;
     }
     public class JsonBindingMQTT
     {

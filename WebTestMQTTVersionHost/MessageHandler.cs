@@ -63,6 +63,7 @@ namespace WebTestMQTTVersionHost
             }
             if(messageData.Type == "WeaponToggle")
             {
+                MonoSingleton<HudMessageReceiver>.instance.SendHudMessage($"{messageData.User} has put weapon {messageData.Message} to {messageData.Value}");
                 ChangeWeapon(messageData);
             }
         }
@@ -416,7 +417,7 @@ namespace WebTestMQTTVersionHost
                     }
                     break;
                 case "BuffEnemy":
-                    MonoSingleton<HudMessageReceiver>.instance.SendHudMessage($"{messageData.User} has buffed randdom enemy");
+                    MonoSingleton<HudMessageReceiver>.instance.SendHudMessage($"{messageData.User} has buffed random enemy");
                     EnemyIdentifier aenemy = FindObjectsOfType<EnemyIdentifier>().Where((x) => !x.dead).FirstOrDefault();
                     if (aenemy != null)
                     {
@@ -424,63 +425,146 @@ namespace WebTestMQTTVersionHost
                     }
                     break;
                 case "SendToLevel":
+                    MonoSingleton<HudMessageReceiver>.instance.SendHudMessage($"{messageData.User} has send you to {messageData.Value}");
                     WebTestMQTTVersionHostPlugin.Log.LogInfo("Sending player to level " + messageData.Value);
                     HandleLeveling(messageData.Value);
                     break;
                 case "SpawnPKEY":
-
                     WebTestMQTTVersionHostPlugin.Log.LogInfo("Spawning PKEY");
                     HandleSpawnPKEY(messageData.Value);
                     break;
                 case "Yeet":
+                    MonoSingleton<HudMessageReceiver>.instance.SendHudMessage($"{messageData.User} has yeeted you with force {messageData.Value}");
                     MonoSingleton<NewMovement>.Instance.Launch(GenerateRandomVector3(-180, -180, -180, 180, 180, 180), float.Parse(messageData.Value));
                     break;
                 case "SetSpeed":
+                    MonoSingleton<HudMessageReceiver>.instance.SendHudMessage($"{messageData.User} has put your speed to {messageData.Value}");
                     MonoSingleton<NewMovement>.Instance.walkSpeed = float.Parse(messageData.Value);
                     break;
                 case "SetJump":
+                    MonoSingleton<HudMessageReceiver>.instance.SendHudMessage($"{messageData.User} has put your jump power to {messageData.Value}");
                     MonoSingleton<NewMovement>.Instance.jumpPower = float.Parse(messageData.Value);
                     break;
                 case "SetDamage":
+                    MonoSingleton<HudMessageReceiver>.instance.SendHudMessage($"{messageData.User} has set your damage multiplier to {messageData.Value}");
                     WebTestMQTTVersionHostPlugin.Instance.DMGMultiPLR = float.Parse(messageData.Value);
                     break;
                 case "SetDamageEnemy":
+                    MonoSingleton<HudMessageReceiver>.instance.SendHudMessage($"{messageData.User} has set enemy damage multiplier to {messageData.Value}");
                     WebTestMQTTVersionHostPlugin.Instance.DMGMultiENEMY = float.Parse(messageData.Value);
                     break;
                 case "Dmg":
+                    MonoSingleton<HudMessageReceiver>.instance.SendHudMessage($"{messageData.User} has damaged you with {messageData.Value}");
                     MonoSingleton<NewMovement>.Instance.GetHurt((int)float.Parse(messageData.Value), false); 
                     break;
                 case "Heal":
+                    MonoSingleton<HudMessageReceiver>.instance.SendHudMessage($"{messageData.User} has healed you with {messageData.Value}");
                     MonoSingleton<NewMovement>.Instance.GetHealth((int)float.Parse(messageData.Value), false);
                     break;
                 case "NoFist":
+                    MonoSingleton<HudMessageReceiver>.instance.SendHudMessage($"{messageData.User} has removed your fists");
                     MonoSingleton<FistControl>.Instance.NoFist();
                     break;
-                case "NoWeapon":
+                case "NoWeapons":
+                    MonoSingleton<HudMessageReceiver>.instance.SendHudMessage($"{messageData.User} has removed your weapons");
                     MonoSingleton<GunControl>.Instance.NoWeapon();
                     break;
                 case "YesFist":
+                    MonoSingleton<HudMessageReceiver>.instance.SendHudMessage($"{messageData.User} has readded your fists");
                     MonoSingleton<FistControl>.Instance.YesFist();
                     break;
-                case "YesWeapon":
+                case "YesWeapons":
+                    MonoSingleton<HudMessageReceiver>.instance.SendHudMessage($"{messageData.User} has readded your weapons");
                     MonoSingleton<GunControl>.Instance.YesWeapon();
                     break;
                 case "Time":
+                    MonoSingleton<HudMessageReceiver>.instance.SendHudMessage($"{messageData.User} has set time to {messageData.Value}");
                     Time.timeScale = float.Parse(messageData.Value);
                     break;
                 case "Scale":
-                    foreach(var item in FindObjectsOfType<GameObject>())
+                    MonoSingleton<HudMessageReceiver>.instance.SendHudMessage($"{messageData.User} has scaled everything by {messageData.Value}");
+                    foreach (var item in FindAllObjectsInScene())
                     {
+                        if (IsDescendantOf(item.transform, MonoSingleton<NewMovement>.instance.transform)) continue;
+                        if (item.GetComponent<RectTransform>() != null) continue;
                         item.transform.localScale += new Vector3(float.Parse(messageData.Value), float.Parse(messageData.Value), float.Parse(messageData.Value));
                     }
                     break;
                 case "Move":
-                    foreach (var item in FindObjectsOfType<GameObject>())
+                    MonoSingleton<HudMessageReceiver>.instance.SendHudMessage($"{messageData.User} has moved everything by {messageData.Value}");
+                    foreach (var item in FindAllObjectsInScene())
                     {
+                        if (IsDescendantOf(item.transform, MonoSingleton<NewMovement>.instance.transform)) continue;
+                        if (item.GetComponent<RectTransform>() != null) continue;
                         item.transform.position += new Vector3(float.Parse(messageData.Value), float.Parse(messageData.Value), float.Parse(messageData.Value));
                     }
                     break;
+                case "KillAll":
+                    MonoSingleton<HudMessageReceiver>.instance.SendHudMessage($"{messageData.User} has killed all enemies");
+                    foreach (var item in FindObjectsOfType<EnemyIdentifier>())
+                    {
+                        item.InstaKill();
+                    }
+                    break;
+                case "SendHudMessage":
+                    MonoSingleton<HudMessageReceiver>.instance.SendHudMessage(messageData.Value);
+                    break;
             }
+        }
+        public static GameObject FindObjectEvenIfDisabled(string rootName, string objPath = null, int childNum = 0, bool useChildNum = false)
+        {
+            var rootObjects = UnityEngine.SceneManagement.SceneManager.GetActiveScene().GetRootGameObjects();
+            var rootObject = System.Array.Find(rootObjects, obj => obj.name == rootName);
+
+            if (rootObject == null)
+                return null;
+
+            var targetObject = rootObject;
+
+            if (!string.IsNullOrEmpty(objPath))
+                targetObject = rootObject.transform.Find(objPath)?.gameObject;
+
+            if (targetObject != null && useChildNum && targetObject.transform.childCount > childNum)
+                targetObject = targetObject.transform.GetChild(childNum).gameObject;
+
+            return targetObject;
+        }
+        public static List<GameObject> FindAllObjectsInScene()
+        {
+            var allObjects = new List<GameObject>();
+            var rootObjects = UnityEngine.SceneManagement.SceneManager.GetActiveScene().GetRootGameObjects();
+
+            foreach (var root in rootObjects)
+            {
+                CollectAllChildren(root, allObjects);
+            }
+
+            return allObjects;
+        }
+
+        private static void CollectAllChildren(GameObject obj, List<GameObject> collectedObjects)
+        {
+            collectedObjects.Add(obj);
+
+            foreach (Transform child in obj.transform)
+            {
+                CollectAllChildren(child.gameObject, collectedObjects);
+            }
+        }
+        public static bool IsDescendantOf(Transform potentialChild, Transform potentialParent)
+        {
+            // Walk up the hierarchy from the potential child
+            Transform current = potentialChild;
+
+            while (current != null)
+            {
+                if (current == potentialParent)
+                    return true; // Match found
+
+                current = current.parent; // Move up the hierarchy
+            }
+
+            return false; // No match found
         }
         public static Vector3 GenerateRandomVector3(float minX, float maxX, float minY, float maxY, float minZ, float maxZ)
         {
@@ -497,11 +581,11 @@ namespace WebTestMQTTVersionHost
 
             if (pkeyData != null)
             {
-                // Assuming you have a method to spawn the PKEY based on the deserialized data
-                WebTestMQTTVersionHostPlugin.Log.LogInfo($"Spawning PKEY {pkeyData.PKEY} at {pkeyData.Vector3Pos}, relative: {pkeyData.Relative}");
+                // Log the event
+                WebTestMQTTVersionHostPlugin.Log.LogInfo($"Spawning PKEY {pkeyData.PKEY} at {pkeyData.Vector3Pos}, relative: {pkeyData.Relative}, amount: {pkeyData.amount}, delay: {pkeyData.delay}");
 
-                // Handle spawning of the PKEY addressable here
-                SpawnPKEYAddressable(pkeyData);
+                // Start the spawning process
+                StartCoroutine(SpawnPKEYAddressableCoroutine(pkeyData));
             }
             else
             {
@@ -509,21 +593,23 @@ namespace WebTestMQTTVersionHost
             }
         }
 
-        public void SpawnPKEYAddressable(PKEYValueData pkeyData)
+        private IEnumerator SpawnPKEYAddressableCoroutine(PKEYValueData pkeyData)
         {
-            Vector3 pos = new Vector3(pkeyData.Vector3Pos.x, pkeyData.Vector3Pos.y, pkeyData.Vector3Pos.z);
-            // Example of spawning the addressable or executing the logic with PKEY and position
-            if (pkeyData.Relative)
+            Vector3 basePosition = new Vector3(pkeyData.Vector3Pos.x, pkeyData.Vector3Pos.y, pkeyData.Vector3Pos.z);
+
+            for (int i = 0; i < pkeyData.amount; i++)
             {
-                // Handle spawning relative to the player's position or another reference
-                Vector3 spawnPosition = GetRelativePosition(pos);
-                // Spawn the addressable with this position
+                // Determine position based on the Relative flag
+                Vector3 spawnPosition = pkeyData.Relative ? GetRelativePosition(basePosition) : basePosition;
+
+                // Spawn the addressable
                 SpawnAddressable(pkeyData.PKEY, spawnPosition);
-            }
-            else
-            {
-                // Spawn at the specified position directly
-                SpawnAddressable(pkeyData.PKEY, pos);
+
+                // Log the iteration
+                WebTestMQTTVersionHostPlugin.Log.LogInfo($"Spawned instance {i + 1}/{pkeyData.amount} of {pkeyData.PKEY}");
+
+                // Wait for the specified delay before spawning the next
+                yield return new WaitForSeconds(pkeyData.delay);
             }
         }
 
