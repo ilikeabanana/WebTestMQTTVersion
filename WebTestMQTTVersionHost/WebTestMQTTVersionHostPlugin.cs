@@ -15,6 +15,7 @@ using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using System.IO;
 using UnityEngine.InputSystem;
+using Configgy;
 
 namespace WebTestMQTTVersionHost
 {
@@ -30,10 +31,10 @@ namespace WebTestMQTTVersionHost
         private static readonly Harmony Harmony = new Harmony(MyGUID);
         public static ManualLogSource Log = new ManualLogSource(PluginName);
 
-        private const string BrokerAddress = "1f88b25c6dec42949e774d673013789d.s1.eu.hivemq.cloud"; // Replace with your broker address
-        private const int BrokerPort = 8883; // Default MQTT port
-        private const string BrokerUsername = "Bananaman"; // Optional username
-        private const string BrokerPassword = "HMkw2X4inSwj@m5"; // Optional password
+        private ConfigEntry<string> BrokerAddress; // Replace with your broker address
+        private ConfigEntry<int> BrokerPort; // Default MQTT port
+        private ConfigEntry<string> BrokerUsername;
+        private ConfigEntry<string> BrokerPassword;
         private const string Topic = "messages/actors";
         private const string EncryptionKey = "MySecureKey123!"; // Replace with your encryption password
         MessageHandler handler;
@@ -45,7 +46,6 @@ namespace WebTestMQTTVersionHost
          * That did NOT work
          * So thats how this became a thing
          * It might be bad but like. i couldnt figure out anything else so...
-         * (DM/ping me if you can made it better)
          */
         public static bool LaunchLoggerthing = false;
         public static string Name = "";
@@ -57,6 +57,11 @@ namespace WebTestMQTTVersionHost
         public float DMGMultiENEMY = 1;
         public static WebTestMQTTVersionHostPlugin Instance {  get; private set; }
 
+        [Configgable(path: "Setup", orderInList: 4)]
+        public static ConfigButton Connect = new ConfigButton(async () =>
+        {
+            await Instance.InitializeMqttClientAsync();
+        });
 
         private async void Start()
         {
@@ -64,7 +69,14 @@ namespace WebTestMQTTVersionHost
             handler = gameObject.AddComponent<MessageHandler>();
             thingthatisntactualyatestanymore = gameObject.AddComponent<JustATestLogger>();
             Logger.LogInfo("Starting Host Mod...");
-            await InitializeMqttClientAsync(); 
+            BrokerAddress = Config.Bind<string>("Setup", "Broker Address", "");
+            BrokerPort = Config.Bind<int>("Setup", "Broker Port", 8883);
+            BrokerUsername = Config.Bind<string>("Setup", "Broker Username", "", "Optional");
+            BrokerPassword = Config.Bind<string>("Setup", "Broker Password", "", "Optional");
+
+            ConfigBuilder builder = new ConfigBuilder();
+            builder.BuildAll();
+            //await InitializeMqttClientAsync(); 
         }
 
         private async Task InitializeMqttClientAsync()
@@ -73,7 +85,7 @@ namespace WebTestMQTTVersionHost
             mqttClient = factory.CreateMqttClient();
 
             var optionsBuilder = new MqttClientOptionsBuilder()
-                .WithTcpServer(BrokerAddress, BrokerPort)
+                .WithTcpServer(BrokerAddress.Value, BrokerPort.Value)
                 .WithTlsOptions(new MqttClientTlsOptions
                 {
                     UseTls = true,
@@ -82,9 +94,9 @@ namespace WebTestMQTTVersionHost
                 });
 
             // Add credentials if username and password are provided
-            if (!string.IsNullOrEmpty(BrokerUsername) && !string.IsNullOrEmpty(BrokerPassword))
+            if (!string.IsNullOrEmpty(BrokerUsername.Value) && !string.IsNullOrEmpty(BrokerPassword.Value))
             {
-                optionsBuilder.WithCredentials(BrokerUsername, BrokerPassword);
+                optionsBuilder.WithCredentials(BrokerUsername.Value, BrokerPassword.Value);
             }
 
             var options = optionsBuilder.Build();
@@ -94,6 +106,7 @@ namespace WebTestMQTTVersionHost
                 mqttClient.ConnectedAsync += async e =>
                 {
                     Logger.LogInfo($"Connected to MQTT broker at {BrokerAddress}:{BrokerPort}.");
+                    MonoSingleton<HudMessageReceiver>.instance.SendHudMessage("Succesfully connected to the broker!");
                     await mqttClient.SubscribeAsync(Topic);
                 };
 
@@ -118,6 +131,7 @@ namespace WebTestMQTTVersionHost
             }
             catch (Exception ex)
             {
+                MonoSingleton<HudMessageReceiver>.instance.SendHudMessage("Failed to connect to broker. Check console for more info.");
                 Logger.LogError($"Failed to connect to MQTT Broker: {ex.Message}");
             }
         }

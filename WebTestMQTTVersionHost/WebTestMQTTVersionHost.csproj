@@ -52,6 +52,9 @@
     <Reference Include="BepInEx">
       <HintPath>..\..\..\..\..\AppData\Roaming\r2modmanPlus-local\ULTRAKILL\profiles\FriendControllerTest\BepInEx\core\BepInEx.dll</HintPath>
     </Reference>
+    <Reference Include="Configgy">
+      <HintPath>..\..\..\..\..\AppData\Roaming\r2modmanPlus-local\ULTRAKILL\profiles\FriendControllerTest\BepInEx\plugins\Hydraxous-Configgy\Configgy.dll</HintPath>
+    </Reference>
     <Reference Include="MQTTnet">
       <HintPath>..\..\..\..\..\AppData\Roaming\r2modmanPlus-local\ULTRAKILL\profiles\FriendControllerTest\BepInEx\plugins\WebTestMQTTVersionHost\MQTTnet.dll</HintPath>
     </Reference>
